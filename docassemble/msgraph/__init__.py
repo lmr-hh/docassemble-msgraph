@@ -37,6 +37,24 @@ class MSGraphSession(OAuth2Session):
         super().__init__(client=BackendApplicationClient(client_id=client_id),
                          *args, **kwargs)
 
+    def __getstate__(self):
+        return {
+            "api_version": self.api_version,
+            "config_key": self.config_key,
+            "client_secret_key": self.client_secret_key,
+            "tenant_id": self.tenant_id,
+            "client_id": self.client_id,
+            "token": self.token
+        }
+
+    def __setstate__(self, state):
+        self.api_version = state["api_version"]
+        self.config_key = state["config_key"]
+        self.client_secret_key = state["config_secret_key"]
+        self.tenant_id = state["tenant_id"]
+        self.client_id = state["client_id"]
+        self.token = state["token"]
+
     def fetch_token(self, client_secret: Optional[str] = None,
                     scope: str = "https://graph.microsoft.com/.default",
                     *args, **kwargs):
