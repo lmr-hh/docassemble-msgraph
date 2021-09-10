@@ -52,7 +52,7 @@ class MSGraphSession(OAuth2Session):
         self.config_key = state["config_key"]
         self.client_secret_key = state["client_secret_key"]
         self.tenant_id = state["tenant_id"]
-        self.client_id = state["client_id"]
+        self._client = BackendApplicationClient(client_id=state["client_id"])
         self.token = state["token"]
 
     def fetch_token(self, client_secret: Optional[str] = None,
