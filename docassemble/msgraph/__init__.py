@@ -50,7 +50,7 @@ class MSGraphSession(OAuth2Session):
     def __setstate__(self, state):
         self.api_version = state["api_version"]
         self.config_key = state["config_key"]
-        self.client_secret_key = state["config_secret_key"]
+        self.client_secret_key = state["client_secret_key"]
         self.tenant_id = state["tenant_id"]
         self.client_id = state["client_id"]
         self.token = state["token"]
