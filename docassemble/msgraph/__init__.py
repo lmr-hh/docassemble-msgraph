@@ -18,6 +18,12 @@ except ImportError:
 
 
 class MSGraphSession(OAuth2Session):
+    def __new__(cls, *args, **kwargs):
+        self = super().__new__(cls)
+        # We do this in order to facilitate pickling
+        self.auth = lambda r: r
+        return self
+
     def __init__(self,
                  api_version: str = "v1.0",
                  config_key: str = "msgraph",
@@ -38,22 +44,8 @@ class MSGraphSession(OAuth2Session):
                          *args, **kwargs)
 
     def __getstate__(self):
-        return {
-            "api_version": self.api_version,
-            "config_key": self.config_key,
-            "client_secret_key": self.client_secret_key,
-            "tenant_id": self.tenant_id,
-            "client_id": self.client_id,
-            "token": self.token
-        }
-
-    def __setstate__(self, state):
-        self.api_version = state["api_version"]
-        self.config_key = state["config_key"]
-        self.client_secret_key = state["client_secret_key"]
-        self.tenant_id = state["tenant_id"]
-        self._client = BackendApplicationClient(client_id=state["client_id"])
-        self.token = state["token"]
+        self.auth = None
+        return self.__dict__
 
     def fetch_token(self, client_secret: Optional[str] = None,
                     scope: str = "https://graph.microsoft.com/.default",
