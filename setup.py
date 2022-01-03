@@ -57,7 +57,7 @@ def find_package_data(where='.', package='', exclude=standard_exclude,
 
 setup(
     name='docassemble.msgraph',
-    version='0.0.9',
+    version='0.1.0',
     description=__doc__,
     long_description=long_description(),
     long_description_content_type='text/markdown',

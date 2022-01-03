@@ -7,11 +7,15 @@ from oauthlib.oauth2 import BackendApplicationClient, TokenExpiredError
 from requests import Response
 from requests_oauthlib import OAuth2Session
 
+import logging
+
+log = logging.getLogger("docassemble.msgraph")
+
 try:
     from docassemble.base.util import get_config
 except ImportError:
     if not os.environ.get("GRAPH_IGNORE_DOCASSEMBLE_IMPORT", ""):
-        print(
+        log.warning(
             "WARNING: Could not import docassemble. Client credentials must be "
             "specified directly.",
             file=sys.stderr)
@@ -31,26 +35,32 @@ class MSGraphSession(OAuth2Session):
                  tenant_id: Optional[str] = None,
                  client_id_key: str = "client id",
                  client_id: Optional[str] = None,
+                 client_secret: Optional[str] = None,
                  client_secret_key: str = "client secret",
+                 scope: Optional[str] = "https://graph.microsoft.com/.default",
                  *args, **kwargs):
         self.api_version = api_version
         self.config_key = config_key
+        self.client_secret = client_secret
         self.client_secret_key = client_secret_key
         self.tenant_id = tenant_id or get_config(config_key).get(
             tenant_id_key)
         client_id = client_id or get_config(config_key).get(
             client_id_key)
-        super().__init__(client=BackendApplicationClient(client_id=client_id),
-                         *args, **kwargs)
+        super().__init__(
+            client=BackendApplicationClient(client_id=client_id, scope=scope),
+            scope=scope,
+            *args, **kwargs
+        )
 
     def __getstate__(self):
         self.auth = None
         return self.__dict__
 
     def fetch_token(self, client_secret: Optional[str] = None,
-                    scope: str = "https://graph.microsoft.com/.default",
+                    scope: Optional[str] = None,
                     *args, **kwargs):
-        secret = client_secret or \
+        secret = client_secret or self.client_secret or \
                  get_config(self.config_key).get(self.client_secret_key)
         return super().fetch_token(
             f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token",
@@ -63,7 +73,11 @@ class MSGraphSession(OAuth2Session):
         if not url.startswith("https://"):
             url = urljoin(f"https://graph.microsoft.com/{self.api_version}/",
                           url)
-        return super().request(method, url, *args, **kwargs)
+        try:
+            return super().request(method, url, *args, **kwargs)
+        except TokenExpiredError:
+            self.fetch_token()
+            return super().request(method, url, *args, **kwargs)
 
     ############################################################################
     #                           CONVENIENCE METHODS                            #
